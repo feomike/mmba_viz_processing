@@ -58,31 +58,41 @@ Tests
 	- is there cases where there is a get test, and not a put test?  put test and  not get test?
 	
 Metrics	
+-------
 5) metrics seems to have nested structure.  i am assuming;
 	- phone_identity is always position 0 in the metrics dictionary
 	- network_data is always position 1 in the metrics dictionary
 	- what is with the metrics after position 1 (e.g. 2 through n?)
 		- cdma or gsm should be in position 2, but is sometimes network_data.  why?
+
 6) why is network_data repeated after position 1 in the dictionary?
+
 7) 'active_network_type' is sometimes null.  why is that?  is it a function of some 
 	other attribute?
+
 8) i am using the last lat/long in the list.  is that ok?  would you 
 	prefer something else?  this can be changed relatively easily.
+
 9)  when is there a dictionary called cdma_cell_location or gsm_cell_location?  
 		why would it be absent?  would it be absent if it is a wifi connection?
+
 10) since cdma and gsm have different attributes, where is what we are proposing;
 	- from gsm use signal_strength and cell_tower_id
 	- from cdma use dbm and concatenate longitude and latitude for cell_tower_id
 	is this ok?
+
 11) what conditions exist to map when metrics (phone_identity, network_data, 
 		gsm_cell_location, cdma_cell_location, cell_neighbour_tower_data, and
 		location) exists or doesn't in the file?  what i am after here are attributes 
 		in the json file which show a dependency or pattern of metrics typing.
+
 12) The location's are associated with the active metric events.  As a mobile recordes 
 		the new locatiouns they would be recorded.  Only one locations means it's 
 		stationary.. a bunch would mean it's moving.   LETS TALK THIS ONE THROUGH.
+
 13) what are negative signal strengths?
  
 Conditions
+----------
 14) i am not doing anything w/ the 'Conditions' dictionary.  should we be?
 
