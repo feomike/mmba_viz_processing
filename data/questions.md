@@ -37,12 +37,17 @@ Conditions
 	param_expired, netactivity, cpuactivity
 
 Tests 
+-----
 1) why is there two different kinds of tags for tests?  ( eg. JHTTPGETMT vs JHTTPGET)? 
 		I need to TEST THIS, but think it is possible.  could be a function of 
-		application version.
+ 	 	application version.
+ 	 	
 2) what does the 'success' at the test type level (e.g. get) in tests dictionary mean?
+
 3) i am ignoring latency as metric.  i am also ignoring packet loss is that ok?
+
 4) what should we do about files w/ multiple tests?  how can i trap these for sure? 
+
 		i need t TEST THIS - eg look at the build number
 	- 20130210184839_166.147.72.176_5117eb8719bb1.json
 	- sprint is only 1 set of test dictionaries per file
