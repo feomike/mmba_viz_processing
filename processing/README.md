@@ -36,3 +36,4 @@ Step 3 - table insertion and data aggregation
 
 Step 4 - map/visualization generation
 -------------------------------------
+- go generate some from the resulting aggreated tables
