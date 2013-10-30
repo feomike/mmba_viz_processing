@@ -1,7 +1,7 @@
 all
 ===
 --all (1)
-(select  hex_75000.gid, geom, ds_average, ds_count from mmba.hex_75000, mmba.\"all\" where hex_75000.gid=\"all\".gid and ds_count > 1) as hex_ds
+'(select  hex_75000.gid, geom, ds_average, ds_count from mmba.hex_75000, mmba.\"all\" where hex_75000.gid=\"all\".gid and ds_count > 1) as hex_ds'
 
 
 Provider (4)
