@@ -14,7 +14,8 @@ The processing directory contains the procesisng steps and code used to transfor
 Visualization
 -------------
 The visualization directory contains code and/or assets used to create the visualizations for end user interaction.
-
+- [example map 1 - all generic](http://bl.ocks.org/feomike/7129604)
+- [example 2 - download speed](http://bl.ocks.org/feomike/7236848)
 
 License
 -------
