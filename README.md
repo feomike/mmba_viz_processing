@@ -10,6 +10,7 @@ The data directory contains back end table structure, dependent data (e.g hexago
 Processing
 ----------
 The processing directory contains the procesisng steps and code used to transform the data from the source JSON files into aggregate data, statistics and visualizations.  
+- the primary parsing script is [mmba.py](https://github.com/feomike/mmba_viz_processing/blob/master/processing/mmba.py).
 
 Visualization
 -------------
