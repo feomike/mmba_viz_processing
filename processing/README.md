@@ -12,12 +12,12 @@ the resulting data visualizations we are making are aggregate statistics of <typ
 
 Additionally, we need an aggregate spatial container to which we can quantify 'tests' by type.  For this purpose, the FCC is using a 75,000 meter centroid to centroid hexagon cell for spatial aggregation.  a test that falls within one hexagon is averaged with all other tests that fall within that hexagon.  smaller resolution hexagons (or other grid patterns) should be investigated for better time/space representation.  at this stage, however, for small scale visualizations, a 75k meter hexagon is very appropriate.
 
-- Using the [hexagon]() data, change the variable in the [table creation script](https://github.com/feomike/mmba_viz_processing/blob/master/processing/mk_mmba_tables.py) for maximum unique id number (also known as GID in PostGIS) prior to running.  
+- Using the [hexagon](https://raw.github.com/feomike/mmba_viz_processing/master/data/hex_75000.geojson) data, change the variable in the [table creation script](https://github.com/feomike/mmba_viz_processing/blob/master/processing/mk_mmba_tables.py) for maximum unique id number (also known as GID in PostGIS) prior to running.  
 - Modify the `tables` variable to decide which tables you want to create.
 - Modify the `myTypes` variables to pre-generate the maximum variation of data to be averaged
 - Then run this script.  this script will create one row for each GID/unique type value in the myTypes variable for each table in the tables collection.  
 - CAUTION:  this script deletes all tables that currently exist with the names of the tables given, in the schema given in the script.
-- the positive thing about these tables, if they all have the same [exact data definitions]().  
+- the positive thing about these tables, if they all have the same [exact data definitions](https://github.com/feomike/mmba_viz_processing/blob/master/data/create_tables.sql).  
 
 Step 2 - file processing
 ------------------------
@@ -28,10 +28,10 @@ Step 2 - file processing
 
 Step 3 - table insertion and data aggregation
 ---------------------------------------------
-- modify the month variable to run in [the mmba.py]() script line 101
+- modify the month variable to run in [the mmba.py](https://github.com/feomike/mmba_viz_processing/blob/master/processing/mmba.py) script line 101
 - ensure the directory variables and file curation are in the appropriate places (see lines 368-369
 - ensure that the dependencies are met.
-- run [the mmba.py]() script
+- run [the mmba.py](https://github.com/feomike/mmba_viz_processing/blob/master/processing/mmba.py) script
 
 
 Step 4 - map/visualization generation
