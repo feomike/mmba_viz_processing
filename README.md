@@ -19,6 +19,6 @@ The visualization directory contains code and/or assets used to create the visua
 License
 -------
 
-The project is a public domain work and is not subject to domestic or international copyright protection. See [the license file](LICENSE) for additional information.
+The project is a public domain work and is not subject to domestic or international copyright protection. See [the license file](https://github.com/feomike/mmba_viz_processing/blob/master/license.md) for additional information.
 
 Members of the public and US government employees who wish to contribute are encourage to do so, but by contributing, dedicate their work to the public domain and waive all rights to their contribution under the terms of the [CC0 Public Domain Dedication](http://creativecommons.org/publicdomain/zero/1.0/).
