@@ -1,7 +1,5 @@
-mike Byrne
 federal communications commission
-October, 2013
-post shutdown
+
 
 This repo contains the data, processing, and visualization steps for creating the FCC's Measuring Mobile Broadband America visualizations.
 
