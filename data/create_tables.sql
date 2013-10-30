@@ -310,3 +310,51 @@ CREATE INDEX mmba_provider_network_type_mytype_btree
   USING btree
   (mytype COLLATE pg_catalog."default" );
 
+
+-- Table: mmba.hex_75000
+
+-- DROP TABLE mmba.hex_75000;
+
+CREATE TABLE mmba.hex_75000
+(
+  gid serial NOT NULL,
+  auto numeric,
+  y numeric,
+  x numeric,
+  auto_2 numeric,
+  region10 character varying(2),
+  division10 character varying(2),
+  statefp10 character varying(2),
+  statens10 character varying(8),
+  geoid10 character varying(2),
+  stusps10 character varying(2),
+  name10 character varying(100),
+  lsad10 character varying(2),
+  mtfcc10 character varying(5),
+  funcstat10 character varying(1),
+  aland10 numeric,
+  awater10 numeric,
+  intptlat10 character varying(11),
+  intptlon10 character varying(12),
+  shape_area numeric,
+  shape_len numeric,
+  geom geometry(MultiPolygon,900913),
+  CONSTRAINT hex_75000_pkey PRIMARY KEY (gid )
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE mmba.hex_75000
+  OWNER TO feomike;
+
+-- Index: mmba.hex_75000_geom_gist
+
+-- DROP INDEX mmba.hex_75000_geom_gist;
+
+CREATE INDEX hex_75000_geom_gist
+  ON mmba.hex_75000
+  USING gist
+  (geom );
+
+
+
