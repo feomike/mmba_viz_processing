@@ -1,7 +1,8 @@
 #mike Byrne
 #federal communications commission
-#may 9, 2013
-#import the .json file into a csv
+#October, 2013
+#post shutdown
+#import the .json file into production tables for display and analysis
 
 #this script imports source json files for the measuring mobile broadband america (mmba)
 #into a database for geospatial analysis.  the full data dictionary of the MMBA program
@@ -10,19 +11,31 @@
 #map and data visualization aspects of the MMBA program.  in essence, this script creates
 #a parallel data asset based off of the source json files delivered from SamKnows
 #this script only works on files which meet the following conditions;
-#	- files which are scheduled tests
+#	- files which are scheduled or manual tests
 #	- files which have 3 and only three tests (get, post and latency)
-#	- files with a location
+#	- files with a location; assumes the information is contained in the last metrics node
 #	- files which have metrics (e.g. len(x["metrics"]) > 0
 
 #the script can be changed such that it imports all files in subdirectories of a directory
-#or based on the provided (e.g. only do files in the att directory).  right now it works
-#on all files in one directory (not in say subdirectories)
+#or based on the provided (e.g. only do files in the att dir/subdir).  right now it works
+#on all files in one directory (not in say subdirectories).  the script assumes a 
+#directory structure such that a set of providers (e.g. att, sprint, tmobile, vz) has
+#a set of subdirectories under it called <provider>/json/<year><month>/ where <year> 
+#is a the year eg 2013 and <month> is a 2 digit month eg <02>.  then all json files for 
+#that provider, year and month to be imported are stored in that directory.
 
 #the way this script works, is that it reads through each source json file, and extracts
 #only the data that the visualization output needs.  the script concatenates the 
-#extracted information into a long comma separated string, then inserts those values
-#into a table.  
+#extracted information into a long comma separated string, then inserts that string
+#into a table.  it then also finds out which hexagon the test is within, and updates
+#a set of tables to acquire the current sum, count and average of each test (get, put
+#rtt and lost packets).  averages are created for every type desired (e.g. all, individual
+#provider, provider and network_type and active_network_type etc).  these updates are 
+#configurable, and require that the table of known values be generated a head of time.
+#see 
+#https://github.com/feomike/mmba_viz_processing/blob/master/processing/mk_mmba_tables.py
+#to generate appropriate tables on the back end
+
 #there are four sections of json file.  the script has a function call
 #for each section of the json file.  every time each function is run, it passes the 
 #current string of attributes to the function, AND returns a resulting string which is 
@@ -53,6 +66,15 @@
 #	- the psycopg2 library needs to be loaded for making a connection to Postgres
 #	- this script uses Postgres, for the insertion, the database, schema and tables
 #		need to exist prior to running
+#	- the script assumes there are tables both to insert to and to update.  these tables
+#		can be created w/ the mk_mmba_tables.py script, which represent the sum, count,
+#		and average of attribute types for tests (get, put, rtt, and lost packet).
+#		attribute types include, 
+#				all;
+#				provider - att, sprint, tmobile, vz;
+#				network_type - eg LTE, eHRPD, EVDO rev a, HPSH+
+#				active_network_type - mobile, WIFI
+#				multiple cross types are yet to be added (e.g. vz_LTE_mobile)
  
 #ISSUES:
 #	- this script inserts all records into a database.  we need to work out how these 
@@ -66,31 +88,26 @@
 #	- i am not using any values from the 'Conditions' dictionary. 
 #	- better documentation on the idea of the update tables
 
-#SOLVED ISSUES:
-#	- any values that are strings in the JSON file that need to be integers are 
-#		automatically converted
-#	- it is unclear if get, post and latency are always the same ordinal location in the
-#		tests dictionary in the json file.  my does not require that they are, but it 
-#		might be an issue
-
 import os
 import json
 import pprint
 import string
 import psycopg2
 import time
-now = time.localtime(time.time())
-print "local time:", time.asctime(now)
 
 #set up how the script should run; change this variables to load only specific data
 #from a certain month 
 #month variables
 month = "09"
+print "    working on month: " + month + "..."
+
 #set up a global array to hold values for the update of the 'type' tables
 #this array is reset every loop of a json file, such that it can hold the appropriate
 #values for updating;  we need to do this as a global array, b/c different fucntions
 #return different values and i need one consistent place to hold the values to update
 
+now = time.localtime(time.time())
+print "    start time:", time.asctime(now)
 
 #global variables - database connection
 myHost = "localhost"
@@ -98,20 +115,20 @@ myPort = "54321"
 myUser = "postgres"
 db = "feomike"
 schema = "mmba"
-myHex = "ptsinhex4"
+myHex = "hex_75000"
 	
 #function for getting top level data
 #accept 2 variables; the json data and the current string
 #return the string w/ more attributes on it; the top level attributes
 def topLevel(myData, theStr):
 	#get top level data
-	mySubType = myData["submission_type"] #only use 'scheduled_test'
-	myTime = str(myData["timestamp"])  #is integer
-	myDate = myData["datetime"]  #is there
+	mySubType = myData["submission_type"] #only use 'scheduled_test' or manual_test
+	myTime = str(myData["timestamp"])  #is integer; no longer using this value
+	myDate = myData["datetime"]  #no longer using this value
 	myTimeZone = str(myData["timezone"])  #is integer
 	#print str(myData["app_version_name"])
 	#append the new values to the end of the existing string, with quotes for text data
-	theStr = theStr + "," + myTime + ",'" + myDate + "', " + myTimeZone
+	theStr = theStr + ", '" + mySubType + "', " + myTimeZone + ", " 
 	return(theStr)
 	
 #function for getting tests data
@@ -129,70 +146,91 @@ def myTests(myData, theStr):
 				myDS = myData["tests"][t]["bytes_sec"] 
 				mySDt = myData["tests"][t]["datetime"]  
 				#you might want a branch b/c of the value returned from 'success'
-				myDSSuccess = myData["tests"][t]["success"]  	
+				myDSSuccess = myData["tests"][t]["success"] 
+				myTime =  myData["tests"][t]["timestamp"]  	
+				myDSDT = myData["tests"][t]["datetime"]
 			if myData["tests"][t]["type"] == "JHTTPPOSTMT" or \
 			          myData["tests"][t]["type"] == "JHTTPPOST": 
 				myUS = myData["tests"][t]["bytes_sec"] 
 				myUDt = myData["tests"][t]["datetime"]  
 				#you might want a branch b/c of the value returned from 'success'
-				myUSSuccess = myData["tests"][t]["success"]  								
+				myUSSuccess = myData["tests"][t]["success"] 
+				myUSDT = myData["tests"][t]["datetime"]
+			if  myData["tests"][t]["type"] == "JUDPLATENCY":
+				myRTT =  myData["tests"][t]["rtt_avg"]
+				myLost = myData["tests"][t]["lost_packets"]	
+				myLTDT = myData["tests"][t]["datetime"]			
 			t = t + 1
 		#append to the updArray the results of the tests
 		updArray.append(myDS)
 		updArray.append(myUS)
+		updArray.append(myRTT)
+		updArray.append(myLost)
 		#append the new values to the end of the existing string	
-		theStr = theStr + "," + str(myDS) + "," + str(myUS)
+		theStr = theStr + "'" + myDSDT + "', " + str(myTime) + ", " 
+		theStr = theStr + str(myDS) + "," + str(myUS) + "," 
+		theStr = theStr + str(myRTT) + "," + str(myLost)
 	return(theStr)
 
 #function for getting metrics
 #accept 2 variables; the json data and the current string
 #return the string w/ more attributes on it; the metrics attributes
 def myMetrics(myData, theStr):
-	#phone_identity is always position 0 in the metrics dictionary
-	myMan = myData["metrics"][0]["manufacturer"]
-	myModel = myData["metrics"][0]["model"]
-	myOSType = myData["metrics"][0]["os_type"]
-	myOSV = myData["metrics"][0]["os_version"]	
-	#network_data is always position 1 in the metrics dictionary
-	myNetType = myData["metrics"][1]["network_type"] #is there
-	myConnected = myData["metrics"][1]["connected"]  #is there and might need to use it
-	myNetOpName = myData["metrics"][1]["network_operator_name"]
-	myPhoneType = myData["metrics"][1]["phone_type"]
-	#sometimes there is no active_network_type in the network_data
-	#dictionary, this code below takes care of that by checking to see 
-	#if the active_network_type exists in that list first, if it does, use it; if 
-	#not, then set ActNetType = "None"
-	if "active_network_type" in myData["metrics"][1]:
-		#print myData["metrics"][1]["active_network_type"]
-		myActNetType = myData["metrics"][1]["active_network_type"]
-	else:
-		myActNetType = "None"
-	#ISSUE
-	#position #2 is NOT always either cdma or gsm cell location
-	#need to work this through; cdma is the problem
-	#sometimes it is not there and network_data is in position #2
-	if myData["metrics"][2]["type"] <> "gsm_cell_location" or \
-			myData["metrics"][2]["type"] <> "cdma_cell_location":
-		mySigStren = "-99999"
-		myCellID = "test"
-	if myData["metrics"][2]["type"] == "gsm_cell_location":			
-		mySigStren = str(myData["metrics"][2]["signal_strength"])
-		myCellID = str(myData["metrics"][2]["cell_tower_id"])
-	if myData["metrics"][2]["type"] == "cdma_cell_location":
-		if "dbm" in myData["metrics"][2]:
-			mySigStren = str(myData["metrics"][2]["dbm"])
-		else:
-			mySigStren = "-99999"
-		myCellID = str(myData["metrics"][2]["base_station_id"])
-		myBaseLat = str(myData["metrics"][2]["base_station_latitude"])
-		myBaseLong = str(myData["metrics"][2]["base_station_longitude"])			
-		myCellID = myCellID #+ "|" + myBaseLong + "|" + myBaseLat
+	#instantiate the signal strength and cellID variables; do this because 
+	#they don't exist in all tests 
+	mySigStren = "-99999"
+	myCellID = "-99999"
+	#cycle through each node in the metrics dictionary, to determine the 'type'
+	#then grab the appropriate values from the dictionaries
+	#the ISSUE this comes up w/ is that for any dictionary whose TYPE is repeated, 
+	#this approach takes the values of the last dictionary
+	m = 0
+	while m < len(myData["metrics"]):
+		#print "m is: " + str(m)
+		if myData["metrics"][m]["type"] == "phone_identity":
+			#phone_identity is usually position 0 in the metrics dictionary
+			myMan = myData["metrics"][m]["manufacturer"]
+			myModel = myData["metrics"][m]["model"]
+			myOSType = myData["metrics"][m]["os_type"]
+			myOSV = myData["metrics"][m]["os_version"]
+		if myData["metrics"][m]["type"] == "network_data":
+			#print myData["metrics"][m]
+			#network_data is usually position 1 in the metrics dictionary
+			myNetType = myData["metrics"][m]["network_type"] #is there
+			#print "myNetType is: " + myNetType
+			myConnected = myData["metrics"][m]["connected"]  #is there and might need to use it
+			myNetOpName = myData["metrics"][m]["network_operator_name"]
+			myPhoneType = myData["metrics"][m]["phone_type"]
+			#sometimes there is no active_network_type in the network_data
+			#dictionary, this code below takes care of that by checking to see 
+			#if the active_network_type exists in that list first, if it does, use it; if 
+			#not, then set ActNetType = "None"
+			if "active_network_type" in myData["metrics"][m]:
+				#print myData["metrics"][m]["active_network_type"]
+				myActNetType = myData["metrics"][m]["active_network_type"]
+			else:
+				myActNetType = "None"
+		if myData["metrics"][m]["type"] == "gsm_cell_location":
+			mySigStren = str(myData["metrics"][m]["signal_strength"])
+			myCellID = str(myData["metrics"][m]["cell_tower_id"])
+		if myData["metrics"][m]["type"] == "cdma_cell_location":
+			if "dbm" in myData["metrics"][m]:
+				mySigStren = str(myData["metrics"][m]["dbm"])
+			else:
+				mySigStren = "-99999"
+			myCellID = str(myData["metrics"][m]["base_station_id"])
+			myBaseLat = str(myData["metrics"][m]["base_station_latitude"])
+			myBaseLong = str(myData["metrics"][m]["base_station_longitude"])			
+			myCellID = myCellID #+ "|" + myBaseLong + "|" + myBaseLat				
+		m = m + 1
+	
 	#append to the updArray the results of the metrics
 	updArray.append(myNetType)
 	updArray.append(myActNetType)
 	#append the new values to the end of the existing string, 
 	#with quotes for text data
 	theStr = theStr + ",'" + myMan + "','" + myModel + "','" + myOSType + "',"
+	#print theStr
 	theStr = theStr + str(myOSV) + ",'" + myNetType + "','" + myNetOpName + "','"
 	theStr = theStr + myPhoneType + "','" + myActNetType + "'"	
 	theStr = theStr + "," + mySigStren + ",'" + myCellID + "'"
@@ -226,7 +264,8 @@ def myLocation(myData, theStr):
 #return the gid of the polygon containing that point
 def myHexGID (myLon, myLat):
 	mySQL = "SELECT gid from " + schema + "." + myHex + " where ST_CONTAINS(geom, "
-	mySQL = mySQL + "ST_SetSRID(ST_MakePoint(" + myLon + ", " + myLat + "), 4326));"
+	mySQL = mySQL + "ST_TRANSFORM(ST_SetSRID(ST_MakePoint(" + myLon + ", " + myLat 
+	mySQL = mySQL + "), 4326), 900913));"
 	cur.execute(mySQL)
 	r = cur.fetchone()
 	if r <> None:
@@ -248,46 +287,61 @@ def insertRaw(theStr):
 
 #update the current production tables
 def updateTable():
+	#at this point, we are using the updArray to update each table
+	#the updArray has this structure;
+	#0=Provider, 1=ds, 2=us, 3=rtt, 4=lp, 5=network_type, 6=active_network_type and
+	#7=gid
 	tables = ["all", "provider", "network_type", "active_network_type", 
 		"provider_network_type", "provider_active_network_type"]
-	#tables = ["all"]
 	#get the value out of the current tables
 	#tables to get; all, provider, network_type, active_network_type, 
 	#provider_network_type, provider_active_network_type
+	#for each table, get the current value at a hex cell,
+	#and update it w/ the values in the updArray.  
 	for tab in tables:
 		mySQL = "UPDATE " + schema + "." + tab + " set ds_sum = ds_sum + " 
 		mySQL = mySQL + str(updArray[1]) + ", ds_count = ds_count + 1, "
 		mySQL = mySQL + "ds_average = (ds_sum + " + str(updArray[1]) + ") / (ds_count "
 		mySQL = mySQL + "+ 1), us_sum = us_sum + " + str(updArray[2]) + ", us_count = "
 		mySQL = mySQL + "us_count + 1, us_average = (us_sum + " + str(updArray[2]) 
-		mySQL = mySQL + ") / (us_count + 1) where gid = " + str(updArray[5])
+		mySQL = mySQL + ") / (us_count + 1), "
+		mySQL = mySQL + "rtt_sum = rtt_sum + " + str(updArray[3]) + ", rtt_count = "
+		mySQL = mySQL + "rtt_count + 1,  rtt_average = (rtt_sum + " + str(updArray[3]) 
+		mySQL = mySQL + ") / (rtt_count + 1), " + "lp_sum = lp_sum + " + str(updArray[4])
+		mySQL = mySQL + ", lp_count = lp_count + 1, lp_average = (lp_sum + "
+		mySQL = mySQL + str(updArray[4]) + ") / (lp_count + 1) "
+		mySQL = mySQL + " where gid = " + str(updArray[7])
+		
 		if tab == "provider":
 			mySQL = mySQL + " and mytype = '"  + updArray[0] + "' "
 		if tab == "network_type":
-			mySQL = mySQL + " and mytype = '" + updArray[3] + "' "
+			mySQL = mySQL + " and mytype = '" + updArray[5] + "' "
 		if tab == "active_network_type":
-			mySQL = mySQL + " and mytype = '" + updArray[4] + "' "
+			mySQL = mySQL + " and mytype = '" + updArray[6] + "' "
 		if tab == "provider_network_type":
-			mySQL = mySQL + " and mytype = '" + updArray[0] + "/" + updArray[3] + "' "
+			mySQL = mySQL + " and mytype = '" + updArray[0] + "/" + updArray[5] + "' "
 		if tab == "provider_active_network_type":
-			mySQL = mySQL + " and mytype = '" + updArray[0] + "/" + updArray[4] + "' "
+			mySQL = mySQL + " and mytype = '" + updArray[0] + "/" + updArray[6] + "' "
 		mySQL = mySQL + "; COMMIT; "
 		cur.execute(mySQL)
 	return()
-	
-#insert week
-#insert month
-#insert year
-#insert total
 
-#table is
-#time, ds sum, ds num, ds average, us sum, us num, us average, carrier, \
-#      network_type, active_network
-#total
-#year
-#month
-#week
+#at some point we need to figure out how to slice time.  one approach is to add a 
+#mytime field to each table, and aggregate the timestamp to an appropriate level
+#such that time could be filtered along with any other variable (e.g. sprint, wifi, lte
+#and day of week) or something like that.  below is just some notes on performing these
+#time insertions/updates	
+#insert week, insert month, insert year, insert total
 
+#table structure could be:
+#ds_sum, ds_count, ds_avg, us_sum, us_count, us_avg, 
+#rtt_sum, rtt_count, rtt_avg, lp_sum, lp_count, lp_avg
+#mytype, mytime
+#perhaps appropriate myTime intervals would be:
+#total, year, month or week
+
+#this function is not being used, but left in as a code example for future extraction
+#of data in the conditions node/dictionary
 #function for getting conditions
 def myConditions(myData):
 	c = 0
@@ -300,14 +354,15 @@ def myConditions(myData):
 			myCPUSuccess = str(myData["conditions"][m]["success"])
 	return()
 
-
+#create the connection string to postgre
 myConn = "dbname=" + db + " host=" + myHost + " port=" + myPort + " user=" + myUser
 conn = psycopg2.connect(myConn)
 cur = conn.cursor()
 
 #global variables - directory / provider 
 provList = ["att","sprint","tmobile","vz"]
-print "     working on month: " + month + "..."
+#for each provider (read directory) in the list, find all json files in the /json/<month>
+#directory, and process each json file one at a time
 for prov in provList:
 	#loop through all files w/i the myDir varibale
 	myDir = "/Users/feomike/documents/analysis/2013/mmba/data/" + prov + \
@@ -328,10 +383,24 @@ for prov in provList:
 			#determined that there is either 0 or 3 tests, so the following logic works
 			#select scheduled_tests and length of tests = 3 and there is a location
 			#need this next line, b/c location is always in the last position in the dict.
-			l = len(data["metrics"]) - 1 
-			if data["submission_type"] == "scheduled_tests" and len(data["tests"]) == 3 \
+			l = len(data["metrics"]) - 1  	
+#code example of looping through the metrics node			
+#					locExists = 0
+#					while l > 0: 
+#						if data["metrics"][l]["type"] == "location":
+#							locExists = 1
+#						l = l - 1
+#					if locExists == 1:
+#						#do something
+								
+			if (data["submission_type"] == "scheduled_tests" \
+					or data["submission_type"] == "manual_test") \
+					and len(data["tests"]) == 3 \
 			        and len(data["metrics"]) > 0 \
 			        and data["metrics"][l]["type"] == "location":
+			    #each function returns a string containing the values extracted from the
+			    #individual json files, and concatenates it for insertion into the tests
+			    #table.
 				#get the toplevel metrics
 				myStr = "'" + file + "'"
 				myStr = topLevel(data, myStr)
@@ -340,9 +409,12 @@ for prov in provList:
 				#get the metrics
 				myStr = myMetrics(data, myStr)
 				myStr = myLocation(data, myStr)
+				#insert the values as a new string in the tests table
 				insertRaw(myStr)
+				#update all other applicable tables based on the data in the individual
+				#json file
 				updateTable()
 conn.commit()
 cur.close
 now = time.localtime(time.time())
-print "local time:", time.asctime(now)
+print "    end   time:", time.asctime(now)
