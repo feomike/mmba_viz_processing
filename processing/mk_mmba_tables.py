@@ -14,7 +14,7 @@ myPort = "54321"
 myUser = "postgres"
 db = "feomike"
 schema = "mmba"
-totalRecs = 830
+totalRecs = 2835
 
 tables = ["all", "provider", "network_type", "active_network_type", 
 		"provider_network_type", "provider_active_network_type"]
@@ -25,13 +25,14 @@ def makeTable(myTab):
 	mySQL = mySQL + "CREATE TABLE " + schema + "." + myTab + "("
 	mySQL = mySQL + "ds_sum numeric, ds_count numeric, ds_average numeric, "
 	mySQL = mySQL + "us_sum numeric, us_count numeric, us_average numeric, "
+	mySQL = mySQL + "rtt_sum numeric, rtt_count numeric, rtt_average numeric, "	
+	mySQL = mySQL + "lp_sum numeric, lp_count numeric, lp_average numeric, "	
 	mySQL = mySQL + "mytype character varying (200), gid integer ) with ( OIDS=TRUE); "
 	mySQL = mySQL + "ALTER TABLE " + schema + "." + myTab + " owner to postgres; "
 	mySQL = mySQL + "CREATE INDEX " + schema + "_" + myTab + "_gid_btree ON "
 	mySQL = mySQL + schema + "." + myTab + " USING btree (gid); "	
 	mySQL = mySQL + "CREATE INDEX " + schema + "_" + myTab + "_mytype_btree ON "
 	mySQL = mySQL + schema + "." + myTab + " USING btree (mytype); "	
-	
 	mySQL = mySQL + "COMMIT;"
 	cur.execute(mySQL)
 	return()
@@ -76,7 +77,8 @@ def insertRows(myTab):
 		types = returnTypes(myTab)
 		for myType in types:
 			mySQL = "INSERT INTO " + schema + "." + myTab + " VALUES ( "
-			mySQL = mySQL + "0, 0, 0, 0, 0, 0, '" + myType + "', " + str(i) + "); "
+			mySQL = mySQL + "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '"
+			mySQL = mySQL + myType + "', " + str(i) + "); "
 			mySQL = mySQL + "COMMIT;" 
 			cur.execute(mySQL)
 
@@ -84,9 +86,13 @@ def insertRows(myTab):
 def mkTests():
 	mySQL = "DROP TABLE IF EXISTS " + schema + ".tests; CREATE TABLE " + schema + "." 
 	mySQL = mySQL + "tests ( file_name character varying(75), "
-	mySQL = mySQL + "unix_time numeric, test_date character varying(35), "
-	mySQL = mySQL + "unix_timezone numeric, downspeed numeric, upspeed numeric, "
-	mySQL = mySQL + "manufacturer character varying(15), model character varying(20), "
+	mySQL = mySQL + "app_version character varying(10), "
+	mySQL = mySQL + "submission_type character varying(15), "
+	mySQL = mySQL + "unix_timezone numeric, "
+	mySQL = mySQL + "test_date character varying(35), unix_time numeric, "
+	mySQL = mySQL + "downspeed numeric, upspeed numeric, "
+	mySQL = mySQL + "rtt numeric, lost_packets numeric, "	
+	mySQL = mySQL + "manufacturer character varying(15), model character varying(30), "
 	mySQL = mySQL + "os_type character varying(15), os_version numeric, "
 	mySQL = mySQL + "network_type character varying(10), "
 	mySQL = mySQL + "network_operator_name character varying(30), "
@@ -94,7 +100,7 @@ def mkTests():
 	mySQL = mySQL + "active_network_type character varying(10), "
 	mySQL = mySQL + "signal_strength numeric, cell_id character varying(100), "
 	mySQL = mySQL + "longitude numeric, latitude numeric, gid numeric ) WITH ( "
-	mySQL = mySQL + "OIDS=FALSE);  ALTER TABLE mmba.test OWNER TO postgres; "
+	mySQL = mySQL + "OIDS=FALSE);  ALTER TABLE " + schema + ".tests OWNER TO postgres; "
 	mySQL = mySQL + "COMMIT; "
 	cur.execute(mySQL)
 	return()
