@@ -49,6 +49,7 @@ for prov in provList:
 			json_data = open(file)
 			data = json.load(json_data)     
 			json_data.close() 
+			myVer = data["app_version_name"]
 			mySubType = data["submission_type"]
 			myTests = len(data["tests"])
 			myMetrics = len(data["metrics"])
@@ -58,11 +59,12 @@ for prov in provList:
 				if data["metrics"][l]["type"] == "location":
 					locExists = 1
 				l = l - 1
-			theStr = "'" + prov + "','" + file + "','" + mySubType + "'," 
+			theStr = "'" + prov + "','" + file + "','" + myVer + "','" + mySubType + "'," 
 			theStr = theStr + str(myTests) + "," + str(myMetrics) + "," + str(locExists)
 			mySQL = "INSERT INTO " + schema + ".log VALUES (" 
 			mySQL = mySQL + theStr + "); Commit;"
 			cur.execute(mySQL)
+
 					
 now = time.localtime(time.time())
 print "    end   time:", time.asctime(now)
