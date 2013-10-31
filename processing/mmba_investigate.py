@@ -2,6 +2,8 @@
 #federal communications commission
 #oct. 28, 2013
 #import the .json file into a csv
+#this script creates a table named 'log' in the given schema.  the log is one record per json file
+#the log pulls out valuable values to understand the spread of the data.  
 
 import os
 import json
