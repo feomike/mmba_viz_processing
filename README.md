@@ -1,7 +1,7 @@
 federal communications commission
 
 
-This repo contains the data, processing, and visualization steps for creating the FCC's Measuring Mobile Broadband America visualizations.
+This repo contains the data, processing, and visualization steps for creating the FCC's Measuring Mobile Broadband America visualizations DEMO/PILOT.
 
 Data
 ----
