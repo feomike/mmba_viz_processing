@@ -122,13 +122,14 @@ myHex = "hex_75000"
 #return the string w/ more attributes on it; the top level attributes
 def topLevel(myData, theStr):
 	#get top level data
+	myVer = myData["app_version_name"] #track the version people are using
 	mySubType = myData["submission_type"] #only use 'scheduled_test' or manual_test
 	myTime = str(myData["timestamp"])  #is integer; no longer using this value
 	myDate = myData["datetime"]  #no longer using this value
 	myTimeZone = str(myData["timezone"])  #is integer
 	#print str(myData["app_version_name"])
 	#append the new values to the end of the existing string, with quotes for text data
-	theStr = theStr + ", '" + mySubType + "', " + myTimeZone + ", " 
+	theStr = theStr + ",'" + myVer + "', '" + mySubType + "', " + myTimeZone + ", "
 	return(theStr)
 	
 #function for getting tests data
