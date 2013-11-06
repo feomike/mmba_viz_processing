@@ -94,11 +94,13 @@ import pprint
 import string
 import psycopg2
 import time
+import datetime
+from datetime import date
 
 #set up how the script should run; change this variables to load only specific data
 #from a certain month 
-#month variables
-month = "09"
+#month variables; needs leading 0 if the directory structure has a leading 0
+month = "10"
 print "    working on month: " + month + "..."
 
 #set up a global array to hold values for the update of the 'type' tables
@@ -167,6 +169,7 @@ def myTests(myData, theStr):
 		updArray.append(myUS)
 		updArray.append(myRTT)
 		updArray.append(myLost)
+		updTime.append(myDSDT)
 		#append the new values to the end of the existing string	
 		theStr = theStr + "'" + myDSDT + "', " + str(myTime) + ", " 
 		theStr = theStr + str(myDS) + "," + str(myUS) + "," 
@@ -294,37 +297,100 @@ def updateTable():
 	#7=gid
 	tables = ["all", "provider", "network_type", "active_network_type", 
 		"provider_network_type", "provider_active_network_type"]
+	tables = ["all"]
 	#get the value out of the current tables
 	#tables to get; all, provider, network_type, active_network_type, 
 	#provider_network_type, provider_active_network_type
 	#for each table, get the current value at a hex cell,
 	#and update it w/ the values in the updArray.  
+	returnMyTime()
+	t = 1
 	for tab in tables:
-		mySQL = "UPDATE " + schema + "." + tab + " set ds_sum = ds_sum + " 
-		mySQL = mySQL + str(updArray[1]) + ", ds_count = ds_count + 1, "
-		mySQL = mySQL + "ds_average = (ds_sum + " + str(updArray[1]) + ") / (ds_count "
-		mySQL = mySQL + "+ 1), us_sum = us_sum + " + str(updArray[2]) + ", us_count = "
-		mySQL = mySQL + "us_count + 1, us_average = (us_sum + " + str(updArray[2]) 
-		mySQL = mySQL + ") / (us_count + 1), "
-		mySQL = mySQL + "rtt_sum = rtt_sum + " + str(updArray[3]) + ", rtt_count = "
-		mySQL = mySQL + "rtt_count + 1,  rtt_average = (rtt_sum + " + str(updArray[3]) 
-		mySQL = mySQL + ") / (rtt_count + 1), " + "lp_sum = lp_sum + " + str(updArray[4])
-		mySQL = mySQL + ", lp_count = lp_count + 1, lp_average = (lp_sum + "
-		mySQL = mySQL + str(updArray[4]) + ") / (lp_count + 1) "
-		mySQL = mySQL + " where gid = " + str(updArray[7])
-		
-		if tab == "provider":
-			mySQL = mySQL + " and mytype = '"  + updArray[0] + "' "
-		if tab == "network_type":
-			mySQL = mySQL + " and mytype = '" + updArray[5] + "' "
-		if tab == "active_network_type":
-			mySQL = mySQL + " and mytype = '" + updArray[6] + "' "
-		if tab == "provider_network_type":
-			mySQL = mySQL + " and mytype = '" + updArray[0] + "/" + updArray[5] + "' "
-		if tab == "provider_active_network_type":
-			mySQL = mySQL + " and mytype = '" + updArray[0] + "/" + updArray[6] + "' "
-		mySQL = mySQL + "; COMMIT; "
-		cur.execute(mySQL)
+		while t < 6:  #t<6 is the position in the updTime array; there are 7 values
+			mySQL = "UPDATE " + schema + "." + tab + " set ds_sum = ds_sum + " 
+			mySQL = mySQL + str(updArray[1]) + ", ds_count = ds_count + 1, "
+			mySQL = mySQL + "ds_average = (ds_sum + " + str(updArray[1]) + ") / (ds_count "
+			mySQL = mySQL + "+ 1), us_sum = us_sum + " + str(updArray[2]) + ", us_count = "
+			mySQL = mySQL + "us_count + 1, us_average = (us_sum + " + str(updArray[2]) 
+			mySQL = mySQL + ") / (us_count + 1), "
+			mySQL = mySQL + "rtt_sum = rtt_sum + " + str(updArray[3]) + ", rtt_count = "
+			mySQL = mySQL + "rtt_count + 1,  rtt_average = (rtt_sum + " + str(updArray[3]) 
+			mySQL = mySQL + ") / (rtt_count + 1), " + "lp_sum = lp_sum + " + str(updArray[4])
+			mySQL = mySQL + ", lp_count = lp_count + 1, lp_average = (lp_sum + "
+			mySQL = mySQL + str(updArray[4]) + ") / (lp_count + 1) "
+			mySQL = mySQL + " where gid = " + str(updArray[7])
+
+			if tab == "provider":
+				mySQL = mySQL + " and mytype = '"  + updArray[0] + "' "
+			if tab == "network_type":
+				mySQL = mySQL + " and mytype = '" + updArray[5] + "' "
+			if tab == "active_network_type":
+				mySQL = mySQL + " and mytype = '" + updArray[6] + "' "
+			if tab == "provider_network_type":
+				mySQL = mySQL + " and mytype = '" + updArray[0] + "/" + updArray[5] + "' "
+			if tab == "provider_active_network_type":
+				mySQL = mySQL + " and mytype = '" + updArray[0] + "/" + updArray[6] + "' "
+			#append on the time element
+			mySQL = mySQL + " and mytime = '" + updTime[t] + "'"
+			mySQL = mySQL + "; COMMIT; "
+			cur.execute(mySQL)
+			t = t + 1
+	return()
+
+#the function that extracts and formats the time element for each row
+#accepts one variable of the timestamp as a string
+#returns an array of the stripped out and formated time elements to update
+#array positions are -  1: all; 2: year; 3: quarter; 4: month; 5: week
+#for the date parsing, you need output which is the year, quarter, month and week of
+#year as an integers.  year is the only value in the datestamp in source json files which
+#are available for use as extracted from the string.  so we have to transform the 
+#timestamp data from the json file to a python date type.
+#then use the date library from the datetime library to acquire the quarter, the 
+#the two digit month, and the week of the year
+def returnMyTime():
+	dt = updTime[0]
+	#dt[4:7] beginning at place 4 through place 7 in the string is the Month
+	#dt[8:10] beginning at place 8 through place 10 is the day of the month
+	#dt[-4:] the last 4 digits is the year
+	myYear = int(dt[-4:])
+	myDay = int(dt[8:10])
+
+	if dt[4:7] == "Jan":
+		myMonth = 1
+	if dt[4:7] == "Feb":
+		myMonth = 2
+	if dt[4:7] == "Mar":
+		myMonth = 3
+	if dt[4:7] == "Apr":
+		myMonth = 4
+	if dt[4:7] == "May":
+		myMonth = 5
+	if dt[4:7] == "Jun":
+		myMonth = 6
+	if dt[4:7] == "Jul":
+		myMonth = 7
+	if dt[4:7] == "Aug":
+		myMonth = 8
+	if dt[4:7] == "Sep":
+		myMonth = 9
+	if dt[4:7] == "Oct":
+		myMonth = 10
+	if dt[4:7] == "Nov":
+		myMonth = 11
+	if dt[4:7] == "Dec":
+		myMonth = 12
+
+	#format a date object by inserting (year, month, day of month) in the date function
+	dt = datetime.date(myYear, myMonth, myDay)
+	#use python to acquire needed date values
+	myQuarter = (myMonth-1)//3+1
+	myWeek = int(dt.strftime("%W"))
+
+	updTime.append("all")
+	updTime.append("year:" + str(myYear))
+	updTime.append(str(myYear) + ":quarter:" + str(myQuarter))
+	updTime.append(str(myYear) + ":month:" + str(myMonth))
+	updTime.append(str(myYear) + ":week:" + str(myWeek))
 	return()
 
 #at some point we need to figure out how to slice time.  one approach is to add a 
@@ -374,6 +440,8 @@ for prov in provList:
 			#clear and initialize the updArray with the provider name
 			updArray = []
 			updArray.append(prov)
+			#clear and initialize the time array
+			updTime = []
 			# the value returned from json.load is a Python dictionary.
 			#print file		
 			json_data = open(file)
@@ -384,16 +452,7 @@ for prov in provList:
 			#determined that there is either 0 or 3 tests, so the following logic works
 			#select scheduled_tests and length of tests = 3 and there is a location
 			#need this next line, b/c location is always in the last position in the dict.
-			l = len(data["metrics"]) - 1  	
-#code example of looping through the metrics node			
-#					locExists = 0
-#					while l > 0: 
-#						if data["metrics"][l]["type"] == "location":
-#							locExists = 1
-#						l = l - 1
-#					if locExists == 1:
-#						#do something
-								
+			l = len(data["metrics"]) - 1  									
 			if (data["submission_type"] == "scheduled_tests" \
 					or data["submission_type"] == "manual_test") \
 					and len(data["tests"]) == 3 \
