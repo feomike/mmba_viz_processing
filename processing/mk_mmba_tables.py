@@ -15,8 +15,18 @@ myUser = "postgres"
 db = "feomike"
 schema = "mmba"
 totalRecs = 2835
+myYear = 2013
 
-tables = ["all", "provider", "network_type", "active_network_type", 
+#with the time column added, the tables have the following sizes, with 2835 hexagons
+#	all: 								201,285
+#	provider:							805,140
+#	network_type:						2,415,420
+#	active_network_type:				603,855
+#	provider_network_type:				9,661,680
+#	provider_active_network_type:		2,415,420
+
+
+tables = ["all","provider", "network_type", "active_network_type", 
 		"provider_network_type", "provider_active_network_type"]
 
 #make the table
@@ -27,12 +37,15 @@ def makeTable(myTab):
 	mySQL = mySQL + "us_sum numeric, us_count numeric, us_average numeric, "
 	mySQL = mySQL + "rtt_sum numeric, rtt_count numeric, rtt_average numeric, "	
 	mySQL = mySQL + "lp_sum numeric, lp_count numeric, lp_average numeric, "	
-	mySQL = mySQL + "mytype character varying (200), gid integer ) with ( OIDS=TRUE); "
+	mySQL = mySQL + "mytype character varying (200), mytime character(17), "
+	mySQL = mySQL + "gid integer ) with ( OIDS=TRUE); "
 	mySQL = mySQL + "ALTER TABLE " + schema + "." + myTab + " owner to postgres; "
 	mySQL = mySQL + "CREATE INDEX " + schema + "_" + myTab + "_gid_btree ON "
 	mySQL = mySQL + schema + "." + myTab + " USING btree (gid); "	
 	mySQL = mySQL + "CREATE INDEX " + schema + "_" + myTab + "_mytype_btree ON "
-	mySQL = mySQL + schema + "." + myTab + " USING btree (mytype); "	
+	mySQL = mySQL + schema + "." + myTab + " USING btree (mytype); "
+	mySQL = mySQL + "CREATE INDEX " + schema + "_" + myTab + "_mytime_btree ON "
+	mySQL = mySQL + schema + "." + myTab + " USING btree (mytime); "
 	mySQL = mySQL + "COMMIT;"
 	cur.execute(mySQL)
 	return()
@@ -74,13 +87,61 @@ def insertRows(myTab):
 	i = 0
 	while i < totalRecs:
 		i = i + 1
+		t = 0
 		types = returnTypes(myTab)
 		for myType in types:
 			mySQL = "INSERT INTO " + schema + "." + myTab + " VALUES ( "
 			mySQL = mySQL + "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '"
-			mySQL = mySQL + myType + "', " + str(i) + "); "
+			mySQL = mySQL + myType + "', 'all', "
+			mySQL = mySQL + str(i) + "); "
 			mySQL = mySQL + "COMMIT;" 
 			cur.execute(mySQL)
+			mySQL = "INSERT INTO " + schema + "." + myTab + " VALUES ( "
+			mySQL = mySQL + "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '"
+			mySQL = mySQL + myType + "','year:" + str(myYear) + "', "
+			mySQL = mySQL + str(i) + "); "
+			mySQL = mySQL + "COMMIT;"
+			cur.execute(mySQL)
+			#do t = quarter
+			t = 0
+			while t < 4:
+				t = t + 1
+				mySQL = "INSERT INTO " + schema + "." + myTab + " VALUES ( "
+				mySQL = mySQL + "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '"
+				mySQL = mySQL + myType + "','" + str(myYear) + ":quarter:" + str(t) + "', "
+				mySQL = mySQL + str(i) + "); "
+				mySQL = mySQL + "COMMIT;"
+				cur.execute(mySQL)
+			#do t = month 
+			t = 0
+			while t < 12:
+				t = t + 1
+				mySQL = "INSERT INTO " + schema + "." + myTab + " VALUES ( "
+				mySQL = mySQL + "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '"
+				mySQL = mySQL + myType + "','" + str(myYear) + ":month:" + str(t) + "', "
+				mySQL = mySQL + str(i) + "); "
+				mySQL = mySQL + "COMMIT;"
+				cur.execute(mySQL)
+			#do t = week 
+			t = 0
+			while t < 53: #max has to be 53
+				t = t + 1
+				mySQL = "INSERT INTO " + schema + "." + myTab + " VALUES ( "
+				mySQL = mySQL + "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '"
+				mySQL = mySQL + myType + "','" + str(myYear) + ":week:" + str(t) + "', "
+				mySQL = mySQL + str(i) + "); "
+				mySQL = mySQL + "COMMIT;"
+				cur.execute(mySQL)		
+#			#do t = doy 
+#			t = 0
+#			while t < 366: #max has to be 366
+#				t = t + 1
+#				mySQL = "INSERT INTO " + schema + "." + myTab + " VALUES ( "
+#				mySQL = mySQL + "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '"
+#				mySQL = mySQL + myType + "','" + str(myYear) + ":doy:" + str(t) + "', "
+#				mySQL = mySQL + str(i) + "); "
+#				mySQL = mySQL + "COMMIT;"
+#				cur.execute(mySQL)
 
 #make the production tests table
 def mkTests():
@@ -88,8 +149,8 @@ def mkTests():
 	mySQL = mySQL + "tests ( file_name character varying(75), "
 	mySQL = mySQL + "app_version character varying(10), "
 	mySQL = mySQL + "submission_type character varying(15), "
-	mySQL = mySQL + "unix_timezone numeric, "
-	mySQL = mySQL + "test_date character varying(35), unix_time numeric, "
+	mySQL = mySQL + "unix_timezone numeric, "  
+	mySQL = mySQL + "test_date timestamp, unix_time numeric, " #character varying(35)
 	mySQL = mySQL + "downspeed numeric, upspeed numeric, "
 	mySQL = mySQL + "rtt numeric, lost_packets numeric, "	
 	mySQL = mySQL + "manufacturer character varying(15), model character varying(30), "
