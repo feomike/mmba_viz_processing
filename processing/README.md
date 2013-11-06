@@ -16,7 +16,7 @@ Additionally, we need an aggregate spatial container to which we can quantify 't
 - Modify the `tables` variable to decide which tables you want to create.
 - Modify the `myTypes` variables to pre-generate the maximum variation of data to be averaged
 - Modify the `returnMyTime` function to adjust the number of time elements you want captured.  if modified, you also need to have these values modified in the mk_mmba_tables.py script.
-- Then run this script.  this script will create one row for each GID/unique type value in the myTypes variable for each table in the tables collection.  
+- Then run this script.  this script will create one row for each GID/unique type value in the myTypes variable/unique myTime value for each table in the tables collection.  
 - CAUTION:  this script deletes all tables that currently exist with the names of the tables given, in the schema given in the script.
 - the positive thing about these tables, if they all have the same [exact data definitions](https://github.com/feomike/mmba_viz_processing/blob/master/data/create_tables.sql).  
 
