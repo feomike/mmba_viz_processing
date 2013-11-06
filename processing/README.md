@@ -1,6 +1,6 @@
 Processing Steps
 ----------------
-This file describes the general processing steps for processing the MMBA data. I CANNOT OVERSTRESS CLEAN INDIVIDUAL FILE CURATION ENOUGH.   I store individual JSON files in provider/json/<year><month> subdirectories to keep file curation easier.  lacking significant process around file curation will result in hard to trap errors down the line.
+This file describes the general processing steps for processing the MMBA data. I CANNOT OVERSTRESS CLEAN INDIVIDUAL FILE CURATION ENOUGH.   I store individual JSON files in `<provider>/json/<year><month>` subdirectories to keep file curation easier.  lacking significant process around file curation will result in hard to trap errors down the line.
 
 Step 1 - database back end set up
 ---------------------------------
