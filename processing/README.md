@@ -15,6 +15,7 @@ Additionally, we need an aggregate spatial container to which we can quantify 't
 - Using the [hexagon](https://raw.github.com/feomike/mmba_viz_processing/master/data/hex_75000.geojson) data, change the variable in the [table creation script](https://github.com/feomike/mmba_viz_processing/blob/master/processing/mk_mmba_tables.py) for maximum unique id number (also known as GID in PostGIS) prior to running.  
 - Modify the `tables` variable to decide which tables you want to create.
 - Modify the `myTypes` variables to pre-generate the maximum variation of data to be averaged
+- Modify the `returnMyTime` function to adjust the number of time elements you want captured.  if modified, you also need to have these values modified in the mk_mmba_tables.py script.
 - Then run this script.  this script will create one row for each GID/unique type value in the myTypes variable for each table in the tables collection.  
 - CAUTION:  this script deletes all tables that currently exist with the names of the tables given, in the schema given in the script.
 - the positive thing about these tables, if they all have the same [exact data definitions](https://github.com/feomike/mmba_viz_processing/blob/master/data/create_tables.sql).  
