@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+                                                                                
+"features": [
+{ "type": "Feature", "id": 1, "properties": { "cell_id": "7246881" }, "geometry": { "type": "Point", "coordinates": [ -77.071561066513794, 39.107642715596306 ] } }
+
+]
+}
