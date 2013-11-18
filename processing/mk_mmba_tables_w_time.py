@@ -144,6 +144,7 @@ def insertRows(myTab):
 #				cur.execute(mySQL)
 
 #make the production tests table
+#make the production tests table
 def mkTests():
 	mySQL = "DROP TABLE IF EXISTS " + schema + ".tests; CREATE TABLE " + schema + "." 
 	mySQL = mySQL + "tests ( file_name character varying(75), "
@@ -153,16 +154,16 @@ def mkTests():
 	mySQL = mySQL + "test_date timestamp, unix_time numeric, " #character varying(35)
 	mySQL = mySQL + "downspeed numeric, upspeed numeric, "
 	mySQL = mySQL + "rtt numeric, lost_packets numeric, "	
-	mySQL = mySQL + "manufacturer character varying(15), model character varying(30), "
+	mySQL = mySQL + "manufacturer character varying(25), model character varying(50), "
 	mySQL = mySQL + "os_type character varying(15), os_version numeric, "
 	mySQL = mySQL + "network_type character varying(10), "
-	mySQL = mySQL + "network_operator_name character varying(30), "
-	mySQL = mySQL + "phone_type character varying(10), roaming boolean,"
+	mySQL = mySQL + "network_operator_name character varying(50), "
+	mySQL = mySQL + "phone_type character varying(10), roaming boolean, "
 	mySQL = mySQL + "active_network_type character varying(10), "
 	mySQL = mySQL + "signal_strength numeric, cell_id character varying(100), "
-	mySQL = mySQL + "longitude numeric, latitude numeric, accuracy numeric, gid numeric ) WITH ( "
-	mySQL = mySQL + "OIDS=FALSE);  ALTER TABLE " + schema + ".tests OWNER TO postgres; "
-	mySQL = mySQL + "COMMIT; "
+	mySQL = mySQL + "longitude numeric, latitude numeric, accuracy numeric, gid numeric) "
+	mySQL = mySQL + "WITH (OIDS=FALSE);  ALTER TABLE " + schema + ".tests OWNER TO  "
+	mySQL = mySQL + "postgres; COMMIT; "
 	cur.execute(mySQL)
 	return()
 
