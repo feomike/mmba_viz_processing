@@ -157,10 +157,10 @@ def mkTests():
 	mySQL = mySQL + "os_type character varying(15), os_version numeric, "
 	mySQL = mySQL + "network_type character varying(10), "
 	mySQL = mySQL + "network_operator_name character varying(30), "
-	mySQL = mySQL + "phone_type character varying(10), "
+	mySQL = mySQL + "phone_type character varying(10), roaming boolean,"
 	mySQL = mySQL + "active_network_type character varying(10), "
 	mySQL = mySQL + "signal_strength numeric, cell_id character varying(100), "
-	mySQL = mySQL + "longitude numeric, latitude numeric, gid numeric ) WITH ( "
+	mySQL = mySQL + "longitude numeric, latitude numeric, accuracy numeric, gid numeric ) WITH ( "
 	mySQL = mySQL + "OIDS=FALSE);  ALTER TABLE " + schema + ".tests OWNER TO postgres; "
 	mySQL = mySQL + "COMMIT; "
 	cur.execute(mySQL)
