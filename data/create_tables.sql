@@ -1,8 +1,8 @@
 -- Table: mmba.tests
 
--- DROP TABLE mmba.tests;
+-- DROP TABLE mmba_5k.tests;
 
-CREATE TABLE mmba.tests
+CREATE TABLE mmba_5k.tests
 (
   file_name character varying(75),
   app_version character varying(10),
@@ -14,24 +14,26 @@ CREATE TABLE mmba.tests
   upspeed numeric,
   rtt numeric,
   lost_packets numeric,
-  manufacturer character varying(15),
-  model character varying(30),
+  manufacturer character varying(25),
+  model character varying(50),
   os_type character varying(15),
   os_version numeric,
   network_type character varying(10),
-  network_operator_name character varying(30),
+  network_operator_name character varying(50),
   phone_type character varying(10),
+  roaming boolean,
   active_network_type character varying(10),
   signal_strength numeric,
   cell_id character varying(100),
   longitude numeric,
   latitude numeric,
+  accuracy numeric,
   gid numeric
 )
 WITH (
   OIDS=FALSE
 );
-ALTER TABLE mmba.tests
+ALTER TABLE mmba_5k.tests
   OWNER TO postgres;
 
 
