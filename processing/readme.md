@@ -11,5 +11,7 @@ Folders
 
 Files
 -----
-- The [workflow.md]() file contains basic workflow to process the data
 - The [mmba_import.py]() script is the basic import script for importing raw json files into a postgres dataset
+- The [mmba_investigate.py]() script contains a framework for search through all of the json files
+- [myUtar.py]() script extracts all of the .json files from the .tar file(s) in the current directory to a ./json/ subdirectory (which is configurable in the script)
+- The [workflow.md]() file contains basic workflow to process the data
