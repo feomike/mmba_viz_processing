@@ -13,4 +13,3 @@ Files
 -----
 - The [workflow.md]() file contains basic workflow to process the data
 - The [mmba_import.py]() script is the basic import script for importing raw json files into a postgres dataset
-- 
