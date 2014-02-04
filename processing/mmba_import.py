@@ -113,7 +113,7 @@ myPort = "54321"
 myUser = "postgres"
 db = "feomike"
 schema = "mmba"
-outTB = "tests"
+outTB = "tests_2014_01"
 myDir = "/Users/feomike/downloads/mmba_downloads/json/"   
 	
 #function for getting top level data
@@ -125,7 +125,7 @@ def topLevel(myData, theStr):
 	mySubType = myData["submission_type"] #only use 'scheduled_test' or manual_test
 	myTime = str(myData["timestamp"])  #is integer; no longer using this value	
 	myDate = myData["datetime"]  #no longer using this value
-	myDate = myDate[:20] + myDate[len(myDate)-4:]
+	myDate = myDate[:19] + ' 2014' #myDate[len(myDate)-4:]
 	myTimeZone = str(myData["timezone"])  #is integer
 	mySim = str(myData["sim_operator_code"])
 	myID = str(myData["enterprise_id"])
@@ -152,33 +152,35 @@ def myTests(myData, theStr):
 	myRTT = '-9'
 	myLost = '-9'
 	myLatSuc = '0'	
-	if len(myData["tests"]) > 0:
-		t = 0
-		while t < len(myData["tests"]):
-			if myData["tests"][t]["type"] == "JHTTPGETMT" or \
-			          myData["tests"][t]["type"] == "JHTTPGET": 
-				myDS = str(myData["tests"][t]["bytes_sec"])
-				#you might want a branch b/c of the value returned from 'success'
-				myDSSuc = str(myData["tests"][t]["success"])
-				myDSDT = myData["tests"][t]["datetime"]
-				#changed the variable myDSDT to be the first 20 characters
-				#concatenated with the last 4 characters (e.g. year); this solves
-				#a time error i was getting when inserting non-standard time zones
-				myDSDT = myDSDT[:20] + myDSDT[len(myDSDT)-4:]				
-				myDSTS =  str(myData["tests"][t]["timestamp"])
-			if myData["tests"][t]["type"] == "JHTTPPOSTMT" or \
-			          myData["tests"][t]["type"] == "JHTTPPOST": 
-				myUS = str(myData["tests"][t]["bytes_sec"])
-				myUSSuc = str(myData["tests"][t]["success"])
-				myUSDT = myData["tests"][t]["datetime"]
-				myUSDT = myUSDT[:20] + myUSDT[len(myUSDT)-4:]
-				myUSTS =  str(myData["tests"][t]["timestamp"])
-			if  myData["tests"][t]["type"] == "JUDPLATENCY":
-				myRTT =  myData["tests"][t]["rtt_avg"]
-				myLost = myData["tests"][t]["lost_packets"]	
-				myLTDT = myData["tests"][t]["datetime"]	
-				myLatSuc = myData["tests"][t]["success"]		
-			t = t + 1			
+	if 'tests' in myData:
+#		print myData["tests"]
+		if len(myData["tests"]) > 0:
+			t = 0
+			while t < len(myData["tests"]):
+				if myData["tests"][t]["type"] == "JHTTPGETMT" or \
+				          myData["tests"][t]["type"] == "JHTTPGET": 
+					myDS = str(myData["tests"][t]["bytes_sec"])
+					#you might want a branch b/c of the value returned from 'success'
+					myDSSuc = str(myData["tests"][t]["success"])
+					myDSDT = myData["tests"][t]["datetime"]
+					#changed the variable myDSDT to be the first 20 characters
+					#concatenated with the last 4 characters (e.g. year); this solves
+					#a time error i was getting when inserting non-standard time zones
+					myDSDT = myDSDT[:19] + ' 2014' #myDSDT[len(myDSDT)-4:]				
+					myDSTS =  str(myData["tests"][t]["timestamp"])
+				if myData["tests"][t]["type"] == "JHTTPPOSTMT" or \
+				          myData["tests"][t]["type"] == "JHTTPPOST": 
+					myUS = str(myData["tests"][t]["bytes_sec"])
+					myUSSuc = str(myData["tests"][t]["success"])
+					myUSDT = myData["tests"][t]["datetime"]
+					myUSDT = myUSDT[:19] + ' 2014' #myUSDT[len(myUSDT)-4:]
+					myUSTS =  str(myData["tests"][t]["timestamp"])
+				if  myData["tests"][t]["type"] == "JUDPLATENCY":
+					myRTT =  myData["tests"][t]["rtt_avg"]
+					myLost = myData["tests"][t]["lost_packets"]	
+					myLTDT = myData["tests"][t]["datetime"]	
+					myLatSuc = myData["tests"][t]["success"]		
+				t = t + 1			
 	#append the new values to the end of the existing string
 	theStr = theStr + myDS + ",'" + myDSSuc + "','" + myDSDT + "'," + myDSTS + ","
 	theStr = theStr + myUS + ",'" + myUSSuc + "','" + myUSDT + "'," + myUSTS + ","
@@ -378,6 +380,7 @@ for dirpath, dirs, files in os.walk(myDir):
 			#updArray.append(prov)
 			#clear and initialize the time array
 			# the value returned from json.load is a Python dictionary.
+#			print dirpath + "/" + file
 			json_data = open(dirpath + "/" + file)
 			data = json.load(json_data)     
 			json_data.close() 
