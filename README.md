@@ -17,6 +17,7 @@ Visualization
 The visualization directory contains code and/or assets used to create the visualizations for end user interaction.
 - [Alpha example map 1 - all generic](http://bl.ocks.org/feomike/7129604)
 - [Alpha example map 2 - download speed](http://bl.ocks.org/feomike/7236848)
+- [Beta example map 1 - download speed](http://bl.ocks.org/feomike/8429802)
 
 License
 -------
